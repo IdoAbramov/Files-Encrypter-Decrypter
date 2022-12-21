@@ -108,8 +108,7 @@ int main() {
 
     freeaddrinfo(result);
 
-    iResult = listen(ListenSocket,
-                     SOMAXCONN);
+    iResult = listen(ListenSocket, SOMAXCONN);
 
     if (iResult == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
@@ -128,7 +127,6 @@ int main() {
         return ReturnCode::FAILED;
     }
 
-    // No longer need server socket
     closesocket(ListenSocket);
 
     iResult = recv(ClientSocket,
@@ -173,24 +171,11 @@ int main() {
     closesocket(ClientSocket);
     WSACleanup();
 
-    /*
-    std::cout << "\n\n";
-    std::cout << "THIS IS ENCRYPTED:\n";
-    for (DWORD i = 0; i < ENCRYPTED_KEY_LENGTH; i++) {
-        printf("%02X ", encryptedKey[i]);
-    }
-
-    std::cout << "THIS IS DECRYPT:\n";
-    for (DWORD i = 0; i < KEY_LENGTH; i++) {
-        printf("%02X ", decryptedKey[i]);
-    }
-    */
-
     return ReturnCode::SUCCESS;
 }
 
 ReturnCode decryptSymmetricKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey,
-                        std::array<BYTE, KEY_LENGTH>& decryptedKey) {
+                               std::array<BYTE, KEY_LENGTH>& decryptedKey) {
 
     BCRYPT_ALG_HANDLE   hRsaAlg = NULL;
 
@@ -284,25 +269,13 @@ ReturnCode decryptSymmetricKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encrypted
         goto Cleanup;
     }
 
-    /*
-    std::cout << "\n\n\n";
-
-    for (DWORD i = 0; i < cbDecryptedBuffer; i++) {
-        printf("%02X ", ((PBYTE)pbDecryptedBuffer)[i]);
-    }
-
-    std::cout << "\n\n\n";
-    for (DWORD i = 0; i < cbDecryptedBuffer; i++) {
-        printf("%c", ((PBYTE)pbDecryptedBuffer)[i]);
-    }
-    */
-
     memcpy_s(decryptedKey.data(),
              KEY_LENGTH, 
              pbDecryptedBuffer,
              KEY_LENGTH);
     
 Cleanup:
+    
     if (hKey) {
         BCryptDestroyKey(hKey);
     }
