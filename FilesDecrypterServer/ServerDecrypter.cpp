@@ -57,7 +57,7 @@ int main() {
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
-        printf("WSAStartup failed with error: %d\n", iResult);
+        std::cerr << "<ERROR> WSAStartup failed with error: " << iResult << "\n";
         return ReturnCode::FAILED;
     }
 
@@ -75,7 +75,7 @@ int main() {
                           &result);
 
     if (iResult != 0) {
-        printf("getaddrinfo failed with error: %d\n", iResult);
+        std::cerr << "<ERROR> getaddrinfo failed with error: " << iResult << "\n";
         WSACleanup();
         return ReturnCode::FAILED;
     }
@@ -86,7 +86,7 @@ int main() {
                           result->ai_protocol);
 
     if (ListenSocket == INVALID_SOCKET) {
-        printf("socket failed with error: %ld\n", WSAGetLastError());
+        std::cerr << "<ERROR> socket failed with error: " << WSAGetLastError() << "\n";
         freeaddrinfo(result);
         WSACleanup();
         return ReturnCode::FAILED;
@@ -99,7 +99,7 @@ int main() {
                    (int)result->ai_addrlen);
 
     if (iResult == SOCKET_ERROR) {
-        printf("bind failed with error: %d\n", WSAGetLastError());
+        std::cerr << "<ERROR> bind failed with error: " << WSAGetLastError() << "\n";
         freeaddrinfo(result);
         closesocket(ListenSocket);
         WSACleanup();
@@ -111,7 +111,7 @@ int main() {
     iResult = listen(ListenSocket, SOMAXCONN);
 
     if (iResult == SOCKET_ERROR) {
-        printf("listen failed with error: %d\n", WSAGetLastError());
+        std::cerr << "<ERROR> listen failed with error: " << WSAGetLastError() << "\n";
         closesocket(ListenSocket);
         WSACleanup();
         return ReturnCode::FAILED;
@@ -121,7 +121,7 @@ int main() {
     ClientSocket = accept(ListenSocket, NULL, NULL);
 
     if (ClientSocket == INVALID_SOCKET) {
-        printf("accept failed with error: %d\n", WSAGetLastError());
+        std::cerr << "<ERROR> accept failed with error: " << WSAGetLastError() << "\n";
         closesocket(ListenSocket);
         WSACleanup();
         return ReturnCode::FAILED;
@@ -135,7 +135,7 @@ int main() {
                    0);
 
     if (iResult == SOCKET_ERROR) {
-        printf("recv failed with error: %d\n", WSAGetLastError());
+        std::cerr << "<ERROR> recv failed with error: " << WSAGetLastError() << "\n";
         closesocket(ClientSocket);
         WSACleanup();
         return ReturnCode::FAILED;
@@ -151,7 +151,7 @@ int main() {
                    0);
 
     if (iResult == SOCKET_ERROR) {
-        printf("send failed with error: %d\n", WSAGetLastError());
+        std::cerr << "<ERROR> send failed with error: " << WSAGetLastError() << "\n";
         closesocket(ClientSocket);
         WSACleanup();
         return ReturnCode::FAILED;
@@ -161,7 +161,7 @@ int main() {
     iResult = shutdown(ClientSocket, SD_SEND);
 
     if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
+        std::cerr << "<ERROR> shutsown failed with error: " << WSAGetLastError() << "\n";
         closesocket(ClientSocket);
         WSACleanup();
         return ReturnCode::FAILED;
