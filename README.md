@@ -1,9 +1,9 @@
 # Files-Encrypter-Decrypter
-**Secure files with AES &amp; RSA encryption.
-**
+**Secure files with AES &amp; RSA encryption.**
 
-**C++ with WinAPI and Windows CNG.
-**
+
+**C++ with WinAPI and Windows CNG.** 
+
 
 **Files description**:
 
