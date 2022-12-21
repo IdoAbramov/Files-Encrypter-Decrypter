@@ -513,13 +513,13 @@ Cleanup:
 ReturnCode serverDecryptKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey,
 			    std::array<BYTE, KEY_LENGTH>& decryptedKey) {
 
-	WSADATA		wsaData;
-	SOCKET		ConnectSocket = INVALID_SOCKET;
-	struct		addrinfo* result = NULL;
-	struct		addrinfo hints;
-	int		iResult;
-	PCSTR		psServerIP = "127.0.0.1";
-	PCSTR		psServerPort = "27000";
+	WSADATA			wsaData;
+	SOCKET			ConnectSocket = INVALID_SOCKET;
+	struct addrinfo* 	result = NULL;
+	struct addrinfo 	hints;
+	int			iResult;
+	PCSTR			psServerIP = "127.0.0.1";
+	PCSTR			psServerPort = "27000";
 
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
