@@ -24,3 +24,8 @@ The server returns the decrypted AES symmetric key which is used to decrypt all 
 
 **Use FilesDecrypterServer** >> to decrypt the AES symmetric key with RSA private key and return it to the client.
 
+
+
+To be added:
+1. RSA private and public key random generation,
+2. saving private key as file at server and public key as file at client.
