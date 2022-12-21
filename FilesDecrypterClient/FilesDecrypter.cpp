@@ -524,7 +524,7 @@ ReturnCode serverDecryptKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
-		std::cerr << "WSAStartup failed with error: " << iResult << "\n";
+		std::cerr << "<ERROR> WSAStartup failed with error: " << iResult << "\n";
 		return ReturnCode::FAILED;
 	}
 
@@ -540,7 +540,7 @@ ReturnCode serverDecryptKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey
 			      &result);
 
 	if (iResult != 0) {
-		std::cerr << "getaddrinfo failed with error: " << iResult << "\n";
+		std::cerr << "<ERROR> getaddrinfo failed with error: " << iResult << "\n";
 		WSACleanup();
 		return ReturnCode::FAILED;
 	}
@@ -551,7 +551,7 @@ ReturnCode serverDecryptKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey
 			       result->ai_protocol);
 
 	if (ConnectSocket == INVALID_SOCKET) {
-		std::cerr << "socket failed with error: " << WSAGetLastError() << "\n";
+		std::cerr << "<ERROR> socket failed with error: " << WSAGetLastError() << "\n";
 		WSACleanup();
 		return ReturnCode::FAILED;
 	}
@@ -576,7 +576,7 @@ ReturnCode serverDecryptKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey
 		       0);
 
 	if (iResult == SOCKET_ERROR) {
-		std::cerr << "send failed with error: " << WSAGetLastError() <<"\n";
+		std::cerr << "<ERROR> send failed with error: " << WSAGetLastError() <<"\n";
 		closesocket(ConnectSocket);
 		WSACleanup();
 		return ReturnCode::FAILED;
@@ -589,7 +589,7 @@ ReturnCode serverDecryptKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey
 		       0);
 
 	if (iResult == SOCKET_ERROR) {
-		std::cerr << "recv failed with error: " << WSAGetLastError() <<"\n";
+		std::cerr << "<ERROR> recv failed with error: " << WSAGetLastError() <<"\n";
 		closesocket(ConnectSocket);
 		WSACleanup();
 		return ReturnCode::FAILED;
@@ -599,7 +599,7 @@ ReturnCode serverDecryptKey(std::array<BYTE, ENCRYPTED_KEY_LENGTH>& encryptedKey
 	iResult = shutdown(ConnectSocket, SD_SEND);
 
 	if (iResult == SOCKET_ERROR) {
-		std::cerr << "shutdown failed with error: " << WSAGetLastError() <<"\n";
+		std::cerr << "<ERROR> shutdown failed with error: " << WSAGetLastError() <<"\n";
 		closesocket(ConnectSocket);
 		WSACleanup();
 		return ReturnCode::FAILED;
