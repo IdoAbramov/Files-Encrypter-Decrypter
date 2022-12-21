@@ -154,7 +154,7 @@ int main() {
         printf("send failed with error: %d\n", WSAGetLastError());
         closesocket(ClientSocket);
         WSACleanup();
-        return 1;
+        return ReturnCode::FAILED;
     }
 
     // shutdown the connection since we're done
@@ -164,7 +164,7 @@ int main() {
         printf("shutdown failed with error: %d\n", WSAGetLastError());
         closesocket(ClientSocket);
         WSACleanup();
-        return 1;
+        return ReturnCode::FAILED;
     }
 
     // cleanup
