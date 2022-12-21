@@ -21,12 +21,6 @@ constexpr int KEY_LENGTH = 16;
 constexpr int IV_LENGTH = 16;
 constexpr int ENCRYPTED_KEY_LENGTH = 128;
 
-// Plain text IV.
-std::array<BYTE, IV_LENGTH> IV = { 0x00, 0x01, 0x02, 0x03,
-                                   0x04, 0x05, 0x06, 0x07,
-                                   0x08, 0x09, 0x0A, 0x0B,
-                                   0x0C, 0x0D, 0x0E, 0x0F };
-
 ReturnCode getPathInput(std::string& path);
 
 ReturnCode getAllFilesFromPath(std::vector<std::string>& filesList,
@@ -52,41 +46,40 @@ int main() {
 
 	const std::string encryptedKeyFileName = "enckey.bin";
 
-    std::array<BYTE, ENCRYPTED_KEY_LENGTH> encryptedKey;
-    std::array<BYTE, KEY_LENGTH> decryptedKey;
+	std::array<BYTE, IV_LENGTH> IV = { 0x00, 0x01, 0x02, 0x03,
+                                   0x04, 0x05, 0x06, 0x07,
+                                   0x08, 0x09, 0x0A, 0x0B,
+                                   0x0C, 0x0D, 0x0E, 0x0F };
+    
+	std::array<BYTE, ENCRYPTED_KEY_LENGTH> encryptedKey;
+ 	std::array<BYTE, KEY_LENGTH> decryptedKey;
 
-    if (ReturnCode::FAILED == getPathInput(path)) {
-        std::cerr << "<ERROR> Input path is not a directory.\n";
-        return ReturnCode::FAILED;
-    }
+  	if (ReturnCode::FAILED == getPathInput(path)) {
+		std::cerr << "<ERROR> Input path is not a directory.\n";
+		return ReturnCode::FAILED;
+	}
 
-    if (ReturnCode::FAILED == getAllFilesFromPath(filesList, path)) {
-        std::cerr << "<ERROR> Cannot get files from path.\n";
-        return ReturnCode::FAILED;
-    }
-
-    // Prints number of files and their full path
-	/*
-    std::cout << "\n" << "Number of files in the directory: " << filesList.size() << "\n";
-    std::cout << "All Files with their full path >>\n";
-    for (auto& file : filesList) {
-        std::cout << file << "\n";
-    }
-	*/
+	if (ReturnCode::FAILED == getAllFilesFromPath(filesList, path)) {
+		std::cerr << "<ERROR> Cannot get files from path.\n";
+		return ReturnCode::FAILED;
+	}
 
 	if (ReturnCode::FAILED == getFileData(path, encryptedKeyFileName, encryptedKey)) {
-	
+		std::cerr << "<ERROR> Failed to get \"enckey.bin\" file data.\n";
+		return ReturnCode::Failed;
 	}
 
 	if (ReturnCode::FAILED == serverDecryptKey(encryptedKey, decryptedKey)) {
-	
+		std::cerr << "<ERROR> Failed to get decrypted AES symmetric key from server.\n";
+		return ReturnCode::Failed;
 	}
 
 	if (ReturnCode::FAILED == decryptFiles(filesList, decryptedKey, IV)) {
-	
+		std::cerr << "<ERROR> Failed to decrypt files data.\n";
+		return ReturnCode::Failed;
 	}
 
-    return ReturnCode::SUCCESS;
+ 	return ReturnCode::SUCCESS;
 }
 
 ReturnCode getPathInput(std::string& path) {
