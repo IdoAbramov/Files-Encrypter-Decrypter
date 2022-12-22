@@ -119,6 +119,7 @@ ReturnCode getAllFilesFromPath(std::vector<std::string>& filesList,
 	std::string		newPath = path + "\\*"; // adds suffix for all files under the chosen directory.
 	LPCSTR			convertedRootPath = newPath.c_str(); // convert of the path into LPCSTR.
 	LPCSTR			convertedCurrentFilePath; // represents the current file's full path.
+	DWORD			dwFileAttributes = 0;
 	WIN32_FIND_DATAA	data; // a struct for file's data.
 	HANDLE			hFind = FindFirstFileA(convertedRootPath, &data); // gets the first file in the given path.
 
@@ -130,12 +131,19 @@ ReturnCode getAllFilesFromPath(std::vector<std::string>& filesList,
 				currentFilePath = path + "\\" + data.cFileName;
 
 				convertedCurrentFilePath = currentFilePath.c_str();
-
-				if (GetFileAttributesA(convertedCurrentFilePath) == FILE_ATTRIBUTE_DIRECTORY) {
-					getAllFilesFromPath(filesList, currentFilePath); // call recursively to get all subdirectories files.
+				
+				dwFileAttributes = GetFileAttributesA(convertedCurrentFilePath);
+				
+				if (dwFileAttributes == INVALID_FILE_ATTRIBUTES){
+					if (dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+						getAllFilesFromPath(filesList, currentFilePath); // call recursively to get all subdirectories files.
+					}
+					else {
+						filesList.push_back(currentFilePath); // add the file to the list.
+					}
 				}
 				else {
-					filesList.push_back(currentFilePath); // add the file to the list.
+					std::cerr << "<ERROR> Invalid file attributes.\n";
 				}
 			}
 		} while (FindNextFileA(hFind, &data)); // keep loop till no more files in the path.
